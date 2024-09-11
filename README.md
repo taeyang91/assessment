@@ -75,7 +75,7 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
 
 1. **Correctness:**
    - Does the API Gateway properly implement Cognito authentication?
-   - Do the Lambda functions successfully call the chosen external services and handle responses correctly?
+   - Do the Lambda functions call the chosen external services and correctly handle responses?
 
 2. **Completeness:**
    - Are all necessary resources created and configured using CloudFormation?
@@ -90,7 +90,7 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
    - How well does the candidate handle potential issues such as error handling, rate limiting, etc.?
 
 5. **Documentation:**
-   - Is the documentation clear, detailed, and does it adequately describe the solution and deployment steps?
+   - Is the documentation clear, detailed, and adequately describes the solution and deployment steps?
 
 ---
 
@@ -98,7 +98,7 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
 
 - The candidate is free to use any language supported by AWS Lambda (e.g., Node.js, Python, Go).
 - Consider using AWS Free Tier eligible services to minimize any costs.
-- The candidate should complete the assessment within [specify a reasonable time frame, e.g., 2-3 hours].
+- The candidate should complete the assessment within 5 -7 Lapsed days.
 
 ---
 
