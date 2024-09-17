@@ -4,7 +4,7 @@
 
 #### **Objective:**
 
-To assess the candidate's ability to design and implement an AWS API Gateway that uses Cognito for authentication and connects to two Lambda functions. Each Lambda function will call an external service of the candidate's choice. The candidate must use CloudFormation scripts to provision the necessary infrastructure and provide clear documentation.
+To assess the candidate's ability to design and implement an AWS API Gateway that uses Cognito for authentication and connects to two Lambda functions. Each Lambda function will call an external service of the candidate's choice. The candidate must use CloudFormation scripts to provide the necessary infrastructure and clear documentation.
 
 ---
 
@@ -24,14 +24,14 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
      - API Gateway
      - Cognito User Pool
      - Lambda Functions
-     - Any other resources required (e.g., IAM roles, permissions, etc.).
+     - Are any other resources required (e.g., IAM roles, permissions, etc.)?
 
 4. **Documentation:**
    - Write a **README** in Markdown format that:
      - Describes the overall architecture.
      - Provides a step-by-step guide on how to deploy the solution.
      - Details the external services chosen for the Lambda functions.
-     - Includes instructions for testing the API endpoints (e.g., sample requests and expected responses).
+     - Includes API endpoint testing instructions (e.g., sample requests and expected responses).
      - Documents any assumptions, limitations, or additional configurations needed.
 
 ---
@@ -64,10 +64,10 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
 
 5. **Deployment Guide:**
    - A section in the README file that includes:
-     - Instructions to deploy using the CloudFormation script.
+     - Instructions on how to deploy using the CloudFormation script.
      - Steps to create and configure the Cognito User Pool.
-     - How to invoke the Lambda functions via the API Gateway.
-     - Any necessary pre-requisites and dependencies.
+     - How do you invoke the Lambda functions via the API Gateway?
+     - Any necessary prerequisites and dependencies.
 
 ---
 
@@ -90,15 +90,15 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
    - How well does the candidate handle potential issues such as error handling, rate limiting, etc.?
 
 5. **Documentation:**
-   - Is the documentation clear, detailed, and adequately describes the solution and deployment steps?
+   - Is the documentation clear and detailed, and does it adequately describe the solution and deployment steps?
 
 ---
 
 ### **Additional Notes:**
 
-- The candidate is free to use any language supported by AWS Lambda (e.g., Node.js, Python, Go).
+- The candidate can use any language supported by AWS Lambda (e.g., Node.js, Python, Go).
 - Consider using AWS Free Tier eligible services to minimize any costs.
-- The candidate should complete the assessment within 5 -7 Lapsed days.
+- The candidate should complete the assessment within 6- 10 Lapsed days.
 
 ---
 
