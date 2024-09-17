@@ -97,8 +97,8 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
 ### **Additional Notes:**
 
 - The candidate can use any language supported by AWS Lambda (e.g., Node.js, Python, Go).
-- Consider using AWS Free Tier eligible services to minimize any costs.
-- The candidate should complete the assessment within 6- 10 Lapsed days.
+- Using AWS Free Tier eligible services to minimize any costs.
+- The candidate should complete the assessment within 6- 10 Calendar days.
 
 ---
 
