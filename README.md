@@ -24,7 +24,7 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
      - API Gateway
      - Cognito User Pool
      - Lambda Functions
-     - Are any other resources required (e.g., IAM roles, permissions, etc.)?
+     - Are any other resources required (e.g., IAM roles, permissions, message queues, caching, etc.)?
 
 4. **Documentation:**
    - Write a **README** in Markdown format that:
@@ -53,12 +53,12 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
      /aws-api-gateway-assessment
      ├── README.md
      ├── cloudformation
-     │   ├── main.yaml (or .json) - Main CloudFormation script
+     │   ├── main.yaml - Main CloudFormation script
      ├── lambdas
      │   ├── lambda1
-     │   │   └── index.js (or .py, .go, etc.) - First Lambda function
+     │   │   └── index.mjs - First Lambda function
      │   ├── lambda2
-     │   │   └── index.js (or .py, .go, etc.) - Second Lambda function
+     │   │   └── lambda_function.py - Second Lambda function
      └── assets (if any)
      ```
 
@@ -96,10 +96,9 @@ To assess the candidate's ability to design and implement an AWS API Gateway tha
 
 ### **Additional Notes:**
 
-- The candidate can use any language supported by AWS Lambda (e.g., Node.js, Python, Go).
+- The candidate must use Node.js for one Lambda and Python for the other.
+- The code should be production level code and not a "prove of concept".
 - Using AWS Free Tier eligible services to minimize any costs.
 - The candidate should complete the assessment within 6- 10 Calendar days.
 
 ---
-
-By structuring the assessment this way, you'll evaluate both the candidate's technical skills and their ability to document and explain their work effectively.
