@@ -1,0 +1,267 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "CloudFormation template to create API Gateway with Cognito authentication and Lambda integrations"
+
+Parameters:
+  LambdaCodeBucket:
+    Type: String
+    Description: "S3 bucket containing Lambda code packages"
+    Default: "api-gateway-assessment-lambda-code"
+
+  LambdaCodeVersion:
+    Type: String
+    Description: "Version of the Lambda code"
+    Default: "v1"
+
+  NasaApiKeyPath:
+    Type: String
+    Description: "SSM Parameter path for NASA API key"
+    Default: "/api-keys/nasa"
+
+Resources:
+  # Authentication Section
+  CognitoUserPool:
+    Type: AWS::Cognito::UserPool
+    Description: "User pool for authenticating API requests"
+    Properties:
+      UserPoolName: MyUserPool
+      AutoVerifiedAttributes:
+        - email
+
+  CognitoUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Description: "Client application that can authenticate against the user pool"
+    Properties:
+      ClientName: MyUserPoolClient
+      UserPoolId: !Ref CognitoUserPool
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+
+  # Lambda Functions
+  NasaImageLambda:
+    Type: AWS::Lambda::Function
+    Description: "Lambda function that retrieves image of the day from NASA's APOD API"
+    Properties:
+      FunctionName: NasaImageLambda
+      Runtime: nodejs22.x
+      Handler: index.getNasaImage
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "lambdas_lambda1.zip"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          NASA_API_KEY_PATH: !Ref NasaApiKeyPath
+          NASA_API_URL: "https://api.nasa.gov/planetary/apod"
+      Timeout: 10
+      MemorySize: 128
+
+  QuotesLambda:
+    Type: AWS::Lambda::Function
+    Description: "Lambda function that fetches random inspirational quotes from ZenQuotes API"
+    Properties:
+      FunctionName: QuotesLambda
+      Runtime: python3.13
+      Handler: lambda_function.get_random_quote
+      Code:
+        S3Bucket: !Ref LambdaCodeBucket
+        S3Key: !Sub "lambdas_lambda2.zip"
+      Role: !GetAtt LambdaExecutionRole.Arn
+      Environment:
+        Variables:
+          QUOTES_API_URL: "https://zenquotes.io/api/random"
+      Timeout: 10
+      MemorySize: 128
+
+  # IAM Roles and Policies
+  LambdaExecutionRole:
+    Type: AWS::IAM::Role
+    Description: "IAM role that grants Lambda functions permissions to write logs and access SSM parameters"
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: 'sts:AssumeRole'
+      ManagedPolicyArns:
+        - 'arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole'
+      Policies:
+        - PolicyName: SSMParameterAccess
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action:
+                  - 'ssm:GetParameter'
+                Resource:
+                  - !Sub 'arn:aws:ssm:${AWS::Region}:${AWS::AccountId}:parameter${NasaApiKeyPath}'
+
+  # API Gateway Configuration
+  ApiGateway:
+    Type: AWS::ApiGateway::RestApi
+    Description: "REST API Gateway that serves as the entry point for client applications"
+    Properties:
+      Name: MyApi
+      Description: "API Gateway for Lambda integration with Cognito authentication"
+
+  NasaImageResource:
+    Type: AWS::ApiGateway::Resource
+    Description: "API resource path for accessing NASA image data"
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: nasa-images
+
+  QuotesResource:
+    Type: AWS::ApiGateway::Resource
+    Description: "API resource path for accessing inspirational quotes"
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ParentId: !GetAtt ApiGateway.RootResourceId
+      PathPart: quotes
+
+  ApiGatewayCognitoAuthorizer:
+    Type: AWS::ApiGateway::Authorizer
+    Description: "Authorizer that validates JWT tokens from Cognito User Pool"
+    Properties:
+      Name: CognitoUserPoolAuthorizer
+      RestApiId: !Ref ApiGateway
+      Type: COGNITO_USER_POOLS
+      IdentitySource: method.request.header.Authorization
+      ProviderARNs:
+        - !GetAtt CognitoUserPool.Arn
+
+  # API Methods and Integration
+  NasaImageMethod:
+    Type: AWS::ApiGateway::Method
+    Description: "GET method for NASA image endpoint with Cognito authentication"
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref NasaImageResource
+      HttpMethod: GET
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ApiGatewayCognitoAuthorizer
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${NasaImageLambda.Arn}/invocations
+
+  QuotesMethod:
+    Type: AWS::ApiGateway::Method
+    Description: "GET method for quotes endpoint with Cognito authentication"
+    Properties:
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref QuotesResource
+      HttpMethod: GET
+      AuthorizationType: COGNITO_USER_POOLS
+      AuthorizerId: !Ref ApiGatewayCognitoAuthorizer
+      Integration:
+        Type: AWS_PROXY
+        IntegrationHttpMethod: POST
+        Uri: !Sub arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${QuotesLambda.Arn}/invocations
+
+  # CORS Configuration for NASA Images
+  NasaImageCorsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref NasaImageResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            application/json: 'Empty'
+
+  # CORS Configuration for Quotes
+  QuotesCorsMethod:
+    Type: AWS::ApiGateway::Method
+    Properties:
+      AuthorizationType: NONE
+      RestApiId: !Ref ApiGateway
+      ResourceId: !Ref QuotesResource
+      HttpMethod: OPTIONS
+      Integration:
+        IntegrationResponses:
+          - StatusCode: 200
+            ResponseParameters:
+              method.response.header.Access-Control-Allow-Headers: "'Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token'"
+              method.response.header.Access-Control-Allow-Methods: "'GET,OPTIONS'"
+              method.response.header.Access-Control-Allow-Origin: "'*'"
+            ResponseTemplates:
+              application/json: ''
+        PassthroughBehavior: WHEN_NO_MATCH
+        RequestTemplates:
+          application/json: '{"statusCode": 200}'
+        Type: MOCK
+      MethodResponses:
+        - StatusCode: 200
+          ResponseParameters:
+            method.response.header.Access-Control-Allow-Headers: true
+            method.response.header.Access-Control-Allow-Methods: true
+            method.response.header.Access-Control-Allow-Origin: true
+          ResponseModels:
+            application/json: 'Empty'
+
+  # API Gateway Deployment
+  ApiGatewayDeployment:
+    Type: AWS::ApiGateway::Deployment
+    Description: "Deployment of API Gateway to production stage"
+    DependsOn:
+      - NasaImageMethod
+      - QuotesMethod
+      - NasaImageCorsMethod
+      - QuotesCorsMethod
+    Properties:
+      RestApiId: !Ref ApiGateway
+      StageName: prod
+
+  # Lambda Permissions for API Gateway
+  NasaImageLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Description: "Permission allowing API Gateway to invoke NASA image Lambda function"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref NasaImageLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/GET/nasa-images
+
+  QuotesLambdaPermission:
+    Type: AWS::Lambda::Permission
+    Description: "Permission allowing API Gateway to invoke quotes Lambda function"
+    Properties:
+      Action: lambda:InvokeFunction
+      FunctionName: !Ref QuotesLambda
+      Principal: apigateway.amazonaws.com
+      SourceArn: !Sub arn:aws:execute-api:${AWS::Region}:${AWS::AccountId}:${ApiGateway}/*/GET/quotes
+
+Outputs:
+  ApiGatewayURL:
+    Description: "API Gateway endpoint URL for making requests"
+    Value: !Sub https://${ApiGateway}.execute-api.${AWS::Region}.amazonaws.com/prod/
+  UserPoolId:
+    Description: "ID of the Cognito User Pool for user management"
+    Value: !Ref CognitoUserPool
+  UserPoolClientId:
+    Description: "ID of the Cognito User Pool Client for authentication"
+    Value: !Ref CognitoUserPoolClient
